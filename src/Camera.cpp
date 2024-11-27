@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include "CUDAWhiteBalance.h"
+#include "CUDAWhiteBalanceAndGamma.h"
 #include "convert16bitTo8bit.h"
 #include "CUDAGammaCorrection.h"
 
@@ -833,26 +833,27 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
 
     uint16_t* raw = static_cast<uint16_t*>(data); // RG10 Bayer 데이터
 
-    cv::Mat rawMat(height, width, CV_16UC1, raw);
-
-    // CV_16UC1 --> CV_8UC1
-    cv::Mat scaledMat1;
-    rawMat.convertTo(scaledMat1, CV_8U, 255.0 / 65535.0);
-
-
-    cv::Mat colorMat1;
-    cv::cvtColor(scaledMat1, colorMat1, cv::COLOR_BayerBG2BGR);
-    //cv::imwrite("Demosaicing.png", colorMat1);
-
-    // 화이트 밸런스 적용
-    applyWhiteBalance(colorMat1);
-    //cv::imwrite("whitebalance.png", colorMat1);
-
-    // 감마 보정 적용
-    applyGammaCorrection(colorMat1, 0.7);
-    //cv::imwrite("gama.png", colorMat1);
-    cv::imshow("image", colorMat1);
-
+    //CUDA 적용 X
+//     cv::Mat rawMat(height, width, CV_16UC1, raw);
+//
+//     // CV_16UC1 --> CV_8UC1
+//     cv::Mat scaledMat1;
+//     rawMat.convertTo(scaledMat1, CV_8U, 255.0 / 65535.0);
+//
+//
+//     cv::Mat colorMat1;
+//     cv::cvtColor(scaledMat1, colorMat1, cv::COLOR_BayerBG2BGR);
+//     //cv::imwrite("Demosaicing.png", colorMat1);
+//
+//     // 화이트 밸런스 적용
+//     applyWhiteBalance(colorMat1);
+//     //cv::imwrite("whitebalance.png", colorMat1);
+//
+//     // 감마 보정 적용
+//     applyGammaCorrection(colorMat1, 0.7);
+//     //cv::imwrite("gama.png", colorMat1);
+//     cv::imshow("image", colorMat1);
+//
 
     // 디버깅용 출력
 //     cv::imshow("Raw Bayer Image Gray (Full Range)", scaledMat1);
@@ -870,65 +871,56 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
 //         throw std::runtime_error("Quit");
 //     }
 
+
+
+
+    // CUDA 적용
+
     // CUDA 기반 화이트 밸런스 적용
     //calculate_and_apply_white_balance(raw, width, height);
 
 
     // GPU 메모리에 Bayer 데이터 업로드
-    //cv::cuda::GpuMat bayer_image_gpu(height, width, CV_16UC1);
-    //bayer_image_gpu.upload(cv::Mat(height, width, CV_16UC1, raw));
+    cv::cuda::GpuMat gpuRaw(height, width, CV_16UC1, raw);
 
-    // CUDA를 사용한 16비트 -> 8비트 변환
-    //cv::cuda::GpuMat bayer_image_8bit_gpu(height, width, CV_8UC1);
-//     convert16BitTo8BitCUDA(
-//         reinterpret_cast<uint16_t*>(bayer_image_gpu.data),
-//         reinterpret_cast<uint8_t*>(bayer_image_8bit_gpu.data),
-//         width, height
-//     );
-//
-//     std::cout << "8 image size: " << bayer_image_8bit_gpu.cols << "x" << bayer_image_8bit_gpu.rows << std::endl;
-//     std::cout << "8  image type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << bayer_image_8bit_gpu.depth() << std::endl;
-//     std::cout << "8 number of channels(c1,c3): " << bayer_image_8bit_gpu.channels() << std::endl;
-//
-//
+    std::cout << "gpuRaw image size: " << gpuRaw.cols << "x" << gpuRaw.rows << std::endl;
+    std::cout << "gpuRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRaw.depth() << std::endl;
+    std::cout << "gpuRaw number of channels(c1,c3): " << gpuRaw.channels() << std::endl;
+
+
+    // 16비트 -> 8비트 변환
+    cv::cuda::GpuMat gpu8bitRaw;
+    gpuRaw.convertTo(gpu8bitRaw, CV_8U, 255.0/65535.0);
+
+    std::cout << "gpu8bitRaw image size: " << gpu8bitRaw.cols << "x" << gpu8bitRaw.rows << std::endl;
+    std::cout << "gpu8bitRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpu8bitRaw.depth() << std::endl;
+    std::cout << "gpu8bitRaw number of channels(c1,c3): " << gpu8bitRaw.channels() << std::endl;
+
+
     // CUDA를 사용한 디모자이킹 (Debayering)
-    //cv::cuda::GpuMat rgb_image_gpu;
-    //cv::cuda::demosaicing(bayer_image_8bit_gpu, rgb_image_gpu, cv::COLOR_BayerRG2BGR);
-    //cv::cuda::cvtColor(bayer_image_8bit_gpu, rgb_image_gpu, cv::COLOR_BayerRG2BGR);
+    cv::cuda::GpuMat gpuRGB;
+    cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::COLOR_BayerBG2BGR);
+    //cv::cuda::cvtColor(gpu8bitRaw, gpuRGB, cv::COLOR_BayerBG2BGR);
+
+    std::cout << "gpuRGB image size: " << gpuRGB.cols << "x" << gpuRGB.rows << std::endl;
+    std::cout << "gpuRGB type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRGB.depth() << std::endl;
+    std::cout << "gpuRGB number of channels(c1,c3): " << gpuRGB.channels() << std::endl;
 
 
-    // CUDA를 사용한 감마 보정 적용
-    //apply_gamma_correction_cuda(gpu_image, gamma);  // CUDA 기반 감마 보정 호출
+    // 화이트 밸런스 및 감마 보정 적용 (CUDA 커널 호출)
+    float gamma = 0.7f;
+    float rGain = 1.1f, gGain = 1.0f, bGain = 0.9f; // 임의 설정, 필요시 동적으로 조정 가능
+    applyWhiteBalanceAndGammaCUDA(gpuRGB, rGain, gGain, bGain, gamma);
 
-    // GPU에서 Host로 결과 다운로드
-//     cv::Mat rgb_image;
-//     rgb_image_gpu.download(rgb_image);
-//
-//     std::cout << "image size: " << rgb_image.cols << "x" << rgb_image.rows << std::endl;
-//     std::cout << "image type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << rgb_image.depth() << std::endl;
-//     std::cout << "number of channels(c1,c3): " << rgb_image.channels() << std::endl;
-//
-//
-//     cv::Mat resizedImage;
-//     cv::resize(rgb_image, resizedImage, cv::Size(1280,960));
-//
-//     cv::imshow("Cuda Image", resizedImage);
-//     //cv::imshow("Cuda Image", rgb_image);
-//
-//     image_count++;
-//     if(image_count >= 99)
-//     {
-//
-//       saveHistogramImage(raw, width, height, "histogram.png");
-//       imwrite("result.png", rgb_image);
-//        saveFrameToFile(raw, width*height*sizeof(uint16_t));
-//     }
-//
-    if(cv::waitKey(1) == 'q')
-    {
-      throw std::runtime_error("Quit");
+    // GPU에서 CPU로 다운로드 및 시각화
+    cv::Mat finalImage;
+    gpuRGB.download(finalImage); // GPU → CPU
+    cv::imshow("Processed Image", finalImage);
+
+    // Step 7: 키 입력으로 종료
+    if (cv::waitKey(1) == 'q') {
+        throw std::runtime_error("Quit");
     }
-
 }
 
 //-------------------------------------Using-OpenCV-CUDA-output-end-------------------------------------//

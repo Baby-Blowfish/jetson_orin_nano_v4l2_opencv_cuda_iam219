@@ -419,4 +419,7 @@ CMakeFiles/app.dir/src/FrameBuffer.cpp.o: \
  /usr/local/include/opencv4/opencv2/video/tracking.hpp \
  /usr/local/include/opencv4/opencv2/video/background_segm.hpp \
  /usr/local/include/opencv4/opencv2/cudaimgproc.hpp \
- /usr/local/include/opencv4/opencv2/cudaarithm.hpp
+ /usr/local/include/opencv4/opencv2/cudaarithm.hpp \
+ /usr/local/include/opencv4/opencv2/cudafilters.hpp \
+ /usr/local/include/opencv4/opencv2/cudacodec.hpp \
+ /usr/local/include/opencv4/opencv2/cudawarping.hpp

@@ -1,2 +1,2 @@
-/usr/bin/ar qc libcuda_processing.a CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalance.cu.o CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_convert16bitTo8bit.cu.o CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAGammaCorrection.cu.o
+/usr/bin/ar qc libcuda_processing.a CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalanceAndGamma.cu.o CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_convert16bitTo8bit.cu.o CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAGammaCorrection.cu.o
 /usr/bin/ranlib libcuda_processing.a

@@ -13,8 +13,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/3.22.1/CMakeSystem.cmake"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAGammaCorrection.cu.o.cmake.pre-gen"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAGammaCorrection.cu.o.depend"
-  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalance.cu.o.cmake.pre-gen"
-  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalance.cu.o.depend"
+  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalanceAndGamma.cu.o.cmake.pre-gen"
+  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalanceAndGamma.cu.o.depend"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_convert16bitTo8bit.cu.o.cmake.pre-gen"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_convert16bitTo8bit.cu.o.depend"
   "/usr/local/lib/cmake/opencv4/OpenCVConfig-version.cmake"
@@ -58,10 +58,10 @@ set(CMAKE_MAKEFILE_OUTPUTS
 
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
-  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalance.cu.o.cmake.pre-gen"
+  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalanceAndGamma.cu.o.cmake.pre-gen"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_convert16bitTo8bit.cu.o.cmake.pre-gen"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAGammaCorrection.cu.o.cmake.pre-gen"
-  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalance.cu.o.Release.cmake"
+  "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAWhiteBalanceAndGamma.cu.o.Release.cmake"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_convert16bitTo8bit.cu.o.Release.cmake"
   "CMakeFiles/cuda_processing.dir/src/cuda_processing_generated_CUDAGammaCorrection.cu.o.Release.cmake"
   "CMakeFiles/CMakeDirectoryInformation.cmake"

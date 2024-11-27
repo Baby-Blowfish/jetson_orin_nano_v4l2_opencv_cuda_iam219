@@ -420,8 +420,11 @@ CMakeFiles/app.dir/src/Camera.cpp.o: \
  /usr/local/include/opencv4/opencv2/video/background_segm.hpp \
  /usr/local/include/opencv4/opencv2/cudaimgproc.hpp \
  /usr/local/include/opencv4/opencv2/cudaarithm.hpp \
+ /usr/local/include/opencv4/opencv2/cudafilters.hpp \
+ /usr/local/include/opencv4/opencv2/cudacodec.hpp \
+ /usr/local/include/opencv4/opencv2/cudawarping.hpp \
  /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/FrameBuffer.h \
- /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/CUDAWhiteBalance.h \
+ /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/CUDAWhiteBalanceAndGamma.h \
  /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/convert16bitTo8bit.h \
  /usr/local/cuda-12.6/include/cuda_runtime.h \
  /usr/local/cuda-12.6/include/crt/host_config.h \
