@@ -31,20 +31,8 @@ int main() {
                 /* 프레임을 읽음: read_frame() 함수를 호출해 프레임을 읽음 */
                 //if (camera.captureFrame(framebuffer)) break;  /* 프레임이 성공적으로 읽히면 무한 루프를 종료하고 다음 프레임 처리로 이동 */
 
-                auto start = std::chrono::high_resolution_clock::now();
 
-                if (camera.captureOpencv())
-                {
-
-                  auto end = std::chrono::high_resolution_clock::now();
-
-                  // 실행 시간 계산 (밀리초 단위)
-                  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-                  std::cout << "captureOpencv() 실행 시간: " << duration << " ms" << std::endl;
-
-                  break;  /* 프레임이 성공적으로 읽히면 무한 루프를 종료하고 다음 프레임 처리로 이동 */
-
-                }
+                if (camera.captureOpencv(camera)) break;
             }
         }
     } catch (const std::exception& e) {
