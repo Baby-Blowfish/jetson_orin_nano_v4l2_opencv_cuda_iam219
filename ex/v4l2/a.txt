@@ -1,0 +1,17 @@
+White balance gains: R=1.20566, G=1.0, B=1.30012
+Image size: 3280x2464
+Image type 0(CV_8U), 1(CV_8S), 2(CV_16U): 2
+Number of channels(C1,C3): 1
+Min pixel value: 0, Max pixel value: 65535
+Nomalized Image size: 3280x2464
+INomalized Image depth: 0
+NNomalized Number of channels: 1
+Nomalized Min pixel value: 0, Nomalized Max pixel value: 255
+PSNR(vng,rgb): 33.6662
+PSNR(vng,ea): 32.677
+PSNR(ea,rgb): 39.4955
+[ WARN:0@1.301] global matrix_expressions.cpp:1333 assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739
+[ WARN:0@1.391] global matrix_expressions.cpp:1325 assign OpenCV/MatExpr: processing of multi-channel arrays might be changed in the future: https://github.com/opencv/opencv/issues/16739
+SSIM(rgb,vng): 0.89259
+SSIM(rgb,ea): 1
+SSIM(ea,vng): 0.89259

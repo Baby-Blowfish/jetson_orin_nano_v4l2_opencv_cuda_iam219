@@ -1,0 +1,4 @@
+/mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/build/CMakeFiles/cuda_processing.dir
+/mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/build/CMakeFiles/app.dir
+/mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/build/CMakeFiles/edit_cache.dir
+/mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/build/CMakeFiles/rebuild_cache.dir
