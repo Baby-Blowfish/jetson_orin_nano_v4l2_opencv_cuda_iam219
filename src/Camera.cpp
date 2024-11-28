@@ -830,8 +830,11 @@ void Camera::applyWhiteBalance(cv::Mat& image) {
 // RAW 파일을 처리하여 RGB 이미지로 변환하는 함수
 void Camera::processRawImageCUDA(void* data, int width, int height) {
 
-
     uint16_t* raw = static_cast<uint16_t*>(data); // RG10 Bayer 데이터
+
+    if (!raw) {
+      throw std::runtime_error("Raw data is null");
+    }
 
     //CUDA 적용 X
 //     cv::Mat rawMat(height, width, CV_16UC1, raw);
@@ -881,44 +884,47 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
 
 
     // GPU 메모리에 Bayer 데이터 업로드
-    cv::cuda::GpuMat gpuRaw(height, width, CV_16UC1, raw);
+    cv::cuda::GpuMat gpuRaw;
+    cv::Mat rawMat(height, width, CV_16UC1, raw); // CPU 메모리의 원본 데이터
+    gpuRaw.upload(rawMat); // CPU → GPU로 데이터 업로드
 
     std::cout << "gpuRaw image size: " << gpuRaw.cols << "x" << gpuRaw.rows << std::endl;
     std::cout << "gpuRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRaw.depth() << std::endl;
     std::cout << "gpuRaw number of channels(c1,c3): " << gpuRaw.channels() << std::endl;
 
-
     // 16비트 -> 8비트 변환
+    cv::cuda::Stream stream;
     cv::cuda::GpuMat gpu8bitRaw;
-    gpuRaw.convertTo(gpu8bitRaw, CV_8U, 255.0/65535.0);
+    gpuRaw.convertTo(gpu8bitRaw, CV_8U, 255.0 / 65535.0, 0, stream);
+    stream.waitForCompletion();
 
     std::cout << "gpu8bitRaw image size: " << gpu8bitRaw.cols << "x" << gpu8bitRaw.rows << std::endl;
     std::cout << "gpu8bitRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpu8bitRaw.depth() << std::endl;
     std::cout << "gpu8bitRaw number of channels(c1,c3): " << gpu8bitRaw.channels() << std::endl;
 
-
     // CUDA를 사용한 디모자이킹 (Debayering)
     cv::cuda::GpuMat gpuRGB;
-    cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::COLOR_BayerBG2BGR);
+    cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::COLOR_BayerRG2BGR);
     //cv::cuda::cvtColor(gpu8bitRaw, gpuRGB, cv::COLOR_BayerBG2BGR);
 
     std::cout << "gpuRGB image size: " << gpuRGB.cols << "x" << gpuRGB.rows << std::endl;
     std::cout << "gpuRGB type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRGB.depth() << std::endl;
     std::cout << "gpuRGB number of channels(c1,c3): " << gpuRGB.channels() << std::endl;
 
-
-    // 화이트 밸런스 및 감마 보정 적용 (CUDA 커널 호출)
-    float gamma = 0.7f;
-    float rGain = 1.1f, gGain = 1.0f, bGain = 0.9f; // 임의 설정, 필요시 동적으로 조정 가능
-    applyWhiteBalanceAndGammaCUDA(gpuRGB, rGain, gGain, bGain, gamma);
-
+//
+//     // 화이트 밸런스 및 감마 보정 적용 (CUDA 커널 호출)
+//     float gamma = 0.7f;
+//     float rGain = 1.1f, gGain = 1.0f, bGain = 0.9f; // 임의 설정, 필요시 동적으로 조정 가능
+//     applyWhiteBalanceAndGammaCUDA(gpuRGB, rGain, gGain, bGain, gamma);
+//
     // GPU에서 CPU로 다운로드 및 시각화
     cv::Mat finalImage;
     gpuRGB.download(finalImage); // GPU → CPU
-    cv::imshow("Processed Image", finalImage);
+    //cv::imshow("Processed Image", finalImage);
+    cv::imwrite("debayering.png", finalImage);
 
     // Step 7: 키 입력으로 종료
-    if (cv::waitKey(1) == 'q') {
+    if (cv::waitKey(0) == 'q') {
         throw std::runtime_error("Quit");
     }
 }
