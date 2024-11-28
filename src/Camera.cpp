@@ -913,9 +913,9 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
 
     // 화이트 밸런스 및 감마 보정 적용 (CUDA 커널 호출)
     float gamma = 0.8f;
-    float rGain = 3.0f, gGain = 0.6f, bGain = 1.1f; // 임의 설정, 필요시 동적으로 조정 가능
-    applyWhiteBalanceAndGammaCUDA(gpuRGB, rGain, gGain, bGain, gamma);
-    //applyWhiteBalanceAndGammaCUDA(gpuRGB, gamma);
+    //float rGain = 3.0f, gGain = 0.6f, bGain = 1.1f; // 임의 설정, 필요시 동적으로 조정 가능
+    //applyWhiteBalanceAndGammaCUDA(gpuRGB, rGain, gGain, bGain, gamma);
+    applyWhiteBalanceAndGammaCUDA(gpuRGB, gamma);
 
     // GPU에서 CPU로 다운로드 및 시각화
     cv::Mat finalImage;
