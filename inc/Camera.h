@@ -27,7 +27,8 @@ private:
 
     int fd;
     int frameCounter = 0, image_count = 1;
-    std::vector<Buffer> buffers;
+    struct Buffer *buffers = NULL;
+    volatile unsigned int n_buffers = 0;      /* 버퍼 개수 */
 
     void initDevice();
     void initMMap();

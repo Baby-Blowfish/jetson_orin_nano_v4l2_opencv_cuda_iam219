@@ -13,6 +13,7 @@
 #include <iomanip>                  // 입출력 서식 조정(std::setprecision 등) 제공
 #include <ctime>                    // 시간 관련 함수(time, localtime 등) 제공
 #include <chrono>                   // C++11 고정밀 시간 측정(chrono::steady_clock 등) 제공
+#include <malloc.h>
 
 #include <sys/ioctl.h>              // 장치 제어 함수(ioctl) 제공
 #include <sys/types.h>              // 데이터 타입 정의(pid_t, off_t 등) 제공

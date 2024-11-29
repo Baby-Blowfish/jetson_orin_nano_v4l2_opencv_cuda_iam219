@@ -244,6 +244,7 @@ CMakeFiles/app.dir/src/Camera.cpp.o: ../src/Camera.cpp \
   /usr/include/c++/11/ratio \
   /usr/include/c++/11/limits \
   /usr/include/c++/11/bits/parse_numbers.h \
+  /usr/include/malloc.h \
   /usr/include/aarch64-linux-gnu/sys/ioctl.h \
   /usr/include/aarch64-linux-gnu/bits/ioctls.h \
   /usr/include/aarch64-linux-gnu/asm/ioctls.h \
@@ -759,6 +760,7 @@ CMakeFiles/app.dir/src/FrameBuffer.cpp.o: ../src/FrameBuffer.cpp \
   /usr/include/c++/11/ratio \
   /usr/include/c++/11/limits \
   /usr/include/c++/11/bits/parse_numbers.h \
+  /usr/include/malloc.h \
   /usr/include/aarch64-linux-gnu/sys/ioctl.h \
   /usr/include/aarch64-linux-gnu/bits/ioctls.h \
   /usr/include/aarch64-linux-gnu/asm/ioctls.h \
@@ -1253,6 +1255,7 @@ CMakeFiles/app.dir/src/main.cpp.o: ../src/main.cpp \
   /usr/include/c++/11/ratio \
   /usr/include/c++/11/limits \
   /usr/include/c++/11/bits/parse_numbers.h \
+  /usr/include/malloc.h \
   /usr/include/aarch64-linux-gnu/sys/ioctl.h \
   /usr/include/aarch64-linux-gnu/bits/ioctls.h \
   /usr/include/aarch64-linux-gnu/asm/ioctls.h \
@@ -1822,6 +1825,8 @@ CMakeFiles/app.dir/src/main.cpp.o: ../src/main.cpp \
 
 /usr/include/aarch64-linux-gnu/bits/mman-shared.h:
 
+/usr/include/aarch64-linux-gnu/bits/mman-linux.h:
+
 /usr/include/c++/11/ext/alloc_traits.h:
 
 /usr/include/c++/11/bits/shared_ptr_base.h:
@@ -2348,8 +2353,6 @@ CMakeFiles/app.dir/src/main.cpp.o: ../src/main.cpp \
 
 /usr/include/c++/11/stdexcept:
 
-/usr/include/aarch64-linux-gnu/bits/mman-linux.h:
-
 /usr/local/include/opencv4/opencv2/flann/logger.h:
 
 /usr/include/c++/11/bits/uniform_int_dist.h:
@@ -2365,6 +2368,8 @@ CMakeFiles/app.dir/src/main.cpp.o: ../src/main.cpp \
 /usr/include/aarch64-linux-gnu/c++/11/bits/atomic_word.h:
 
 /usr/include/c++/11/cwctype:
+
+/usr/include/malloc.h:
 
 /usr/include/sched.h:
 

@@ -193,7 +193,7 @@ CMakeFiles/app.dir/src/Camera.cpp.o: \
  /usr/include/c++/11/bits/invoke.h \
  /usr/include/c++/11/bits/quoted_string.h /usr/include/c++/11/chrono \
  /usr/include/c++/11/ratio /usr/include/c++/11/limits \
- /usr/include/c++/11/bits/parse_numbers.h \
+ /usr/include/c++/11/bits/parse_numbers.h /usr/include/malloc.h \
  /usr/include/aarch64-linux-gnu/sys/ioctl.h \
  /usr/include/aarch64-linux-gnu/bits/ioctls.h \
  /usr/include/aarch64-linux-gnu/asm/ioctls.h \

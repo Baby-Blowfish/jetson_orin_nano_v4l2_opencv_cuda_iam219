@@ -24,9 +24,15 @@ Camera::Camera() {
 
 Camera::~Camera() {
     stopCapturing();
-    for (size_t i = 0; i < buffers.size(); ++i) {
-        munmap(buffers[i].start, buffers[i].length);
+
+        /* 메모리 해제 */
+    for (int i = 0; i < n_buffers; ++i)
+    {
+        if (-1 == munmap(buffers[i].start, buffers[i].length));
     }
+
+    free(buffers);
+
     close(fd);
 }
 
@@ -36,6 +42,7 @@ int Camera::get_fd() const {
 }
 
 void Camera::initDevice() {
+
     struct v4l2_capability cap{};
     if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == -1) {
         throw std::runtime_error("Failed to query V4L2 device capabilities");
@@ -45,21 +52,45 @@ void Camera::initDevice() {
         throw std::runtime_error("Device does not support required capabilities");
     }
 
-    struct v4l2_format fmt{};
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width = WIDTH;
-    fmt.fmt.pix.height = HEIGHT;
-    //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB10;
-    //fmt.fmt.pix.field = V4L2_FIELD_NONE;
-
-    if (ioctl(fd, VIDIOC_S_FMT, &fmt) == -1) {
-        throw std::runtime_error("Failed to set format");
+    if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
+        throw std::runtime_error("Device does not support streaming");
     }
+
+
+
+    struct v4l2_cropcap cropcap{};
+    struct v4l2_crop crop{};
+
+//     /* 비디오 입력 및 크롭 설정 */
+//     memset(&cropcap, 0, sizeof(cropcap));  /* cropcap 구조체의 모든 필드를 0으로 초기화 */
+//     cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;  /* 크롭 설정을 위한 버퍼 타입을 비디오 캡처로 설정 */
+//     if (0 == ioctl(fd, VIDIOC_CROPCAP, &cropcap)) {  /* VIDIOC_CROPCAP: 장치의 크롭 기능 지원 여부 확인 */
+//         crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;      /* 크롭 버퍼 타입을 비디오 캡처로 설정 */
+//         crop.c = cropcap.defrect;  /* 기본 크롭 영역을 장치의 기본값으로 설정 (defrect는 장치의 기본 크롭 영역) */
+//           /* VIDIOC_S_CROP: 크롭 영역을 설정 (드라이버에 따라 지원되지 않을 수 있음) */
+//         if (ioctl(fd, VIDIOC_S_CROP, &crop) == -1) {
+//           throw std::runtime_error("crop");
+//         }
+//     }
+//
+
+//     struct v4l2_format fmt{};
+//     memset(&fmt, 0, sizeof(fmt));
+//     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+//     fmt.fmt.pix.width = WIDTH;
+//     fmt.fmt.pix.height = HEIGHT;
+//     //fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+//     fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_SRGGB10;
+//     fmt.fmt.pix.field = V4L2_FIELD_NONE;
+//
+//     if (ioctl(fd, VIDIOC_S_FMT, &fmt) == -1) {
+//         throw std::runtime_error("Failed to set format");
+//     }
 }
 
 void Camera::initMMap() {
     struct v4l2_requestbuffers req{};
+    memset(&req, 0, sizeof(req));  /* req 구조체의 모든 필드를 0으로 초기화 */
     req.count = 8;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
@@ -72,34 +103,48 @@ void Camera::initMMap() {
         throw std::runtime_error("Insufficient buffer memory");
     }
 
-    buffers.resize(req.count);
-    for (size_t i = 0; i < buffers.size(); ++i) {
-        struct v4l2_buffer buf{};
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-        buf.index = i;
 
-        if (ioctl(fd, VIDIOC_QUERYBUF, &buf) == -1) {
-            throw std::runtime_error("Failed to query buffer");
-        }
-
-        buffers[i].length = buf.length;
-        buffers[i].start = mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
-        if (buffers[i].start == MAP_FAILED) {
-            throw std::runtime_error("Failed to map buffer");
-        }
+    /* 요청한 버퍼 수만큼의 메모리를 할당 (calloc을 사용해 메모리를 0으로 초기화) */
+    buffers = static_cast<Buffer*>(calloc(req.count, sizeof(*buffers)));  /* 버퍼 정보를 저장할 메모리를 동적으로 할당 */
+    if (!buffers) {
+        throw std::runtime_error("Out of memory");
     }
+
+        /* 각 버퍼에 대해 메모리 맵핑 */
+    for (n_buffers = 0; n_buffers < req.count; ++n_buffers) {
+        struct v4l2_buffer buf;
+        memset(&buf, 0, sizeof(buf));  /* buf 구조체 초기화 */
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;  /* 비디오 캡처 타입으로 버퍼 타입 설정 */
+        buf.memory = V4L2_MEMORY_MMAP;  /* 메모리 매핑 방식 설정 */
+        buf.index = n_buffers;  /* 버퍼의 인덱스 설정 (0부터 시작) */
+
+        /* 버퍼 정보를 조회 (VIDIOC_QUERYBUF 호출) */
+        if (ioctl(fd, VIDIOC_QUERYBUF, &buf) == -1) {
+            throw std::runtime_error("VIDIOC_QUERYBUF");
+        }
+
+
+        buffers[n_buffers].length = buf.length;  /* 각 버퍼의 길이를 저장 (버퍼의 크기) */
+        buffers[n_buffers].start = mmap(NULL, buf.length, PROT_READ | PROT_WRITE,
+                                        MAP_SHARED, fd, buf.m.offset);  /* 메모리 매핑 수행 */
+        if (MAP_FAILED == buffers[n_buffers].start)
+            throw std::runtime_error("mmap");
+    }
+
 }
 
 void Camera::startCapturing() {
-    for (size_t i = 0; i < buffers.size(); ++i) {
-        struct v4l2_buffer buf{};
+
+    for (int i = 0; i < n_buffers; ++i) {
+        struct v4l2_buffer buf;
+        memset(&buf, 0, sizeof(buf));
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index = i;
 
+        /* 버퍼를 큐에 넣음 */
         if (ioctl(fd, VIDIOC_QBUF, &buf) == -1) {
-            throw std::runtime_error("Failed to queue buffer");
+            throw std::runtime_error("VIDIOC_QBUF");
         }
     }
 
@@ -114,6 +159,7 @@ void Camera::stopCapturing() {
     if (ioctl(fd, VIDIOC_STREAMOFF, &type) == -1) {
         throw std::runtime_error("Failed to stop streaming");
     }
+
 }
 
 
@@ -830,11 +876,102 @@ void Camera::applyWhiteBalance(cv::Mat& image) {
 // RAW 파일을 처리하여 RGB 이미지로 변환하는 함수
 void Camera::processRawImageCUDA(void* data, int width, int height) {
 
-    uint16_t* raw = static_cast<uint16_t*>(data); // RG10 Bayer 데이터
+    uint16_t* raw = reinterpret_cast<uint16_t*>(data); // RG10 Bayer 데이터
 
     if (!raw) {
       throw std::runtime_error("Raw data is null");
     }
+
+// #define WIDTH 3280
+// #define HEIGHT 2464
+
+//width = 3264;
+// 0번째 행의 마지막 32픽셀 출력
+std::cout << "0 Row - 0~32 ----   last~32 Pixels:" << std::endl;
+const uint16_t* secondRow = raw; // 두 번째 행의 시작 주소
+for (int col = 0; col < 32; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout <<"-------";
+for (int col = width - 32; col < width; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout << std::endl<< std::endl;
+
+
+// 1번째 행의 마지막 32픽셀 출력
+std::cout << "1 Row - 0~32 ----   last~32 Pixels:" << std::endl;
+secondRow = raw + width; // 두 번째 행의 시작 주소
+for (int col = 0; col < 32; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout <<"-------";
+for (int col = width - 32; col < width; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout << std::endl<< std::endl;
+
+// 2번째 행의 마지막 32픽셀 출력
+std::cout << "2 Row - 0~32 ----   last~32 Pixels:" << std::endl;
+secondRow = raw + width*2; // 두 번째 행의 시작 주소
+for (int col = 0; col < 32; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout <<"-------";
+for (int col = width - 32; col < width; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout << std::endl << std::endl;
+
+// 2번째 행의 마지막 32픽셀 출력
+std::cout << "3 Row - 0~32 ----   last~32 Pixels:" << std::endl;
+secondRow = raw + width*3; // 두 번째 행의 시작 주소
+for (int col = 0; col < 32; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout <<"-------";
+for (int col = width - 32; col < width; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout << std::endl << std::endl;
+
+// 2번째 행의 마지막 32픽셀 출력
+std::cout << "2463 Row - 0~32 ----   last~32 Pixels:" << std::endl;
+secondRow = raw + width*2463; // 두 번째 행의 시작 주소
+for (int col = 0; col < 32; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout <<"-------";
+for (int col = width - 32; col < width; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout << std::endl << std::endl;
+
+
+// 2번째 행의 마지막 32픽셀 출력
+std::cout << "2464 Row - 0~32 ----   last~32 Pixels:" << std::endl;
+secondRow = raw + width*2464; // 두 번째 행의 시작 주소
+for (int col = 0; col < 32; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout <<"-------";
+for (int col = width - 32; col < width; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout << std::endl << std::endl;
+
+// 2번째 행의 마지막 32픽셀 출력
+std::cout << "2465 Row - 0~32 ----   last~32 Pixels:" << std::endl;
+secondRow = raw + width*2465; // 두 번째 행의 시작 주소
+for (int col = 0; col < 32; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout <<"-------";
+for (int col = width - 32; col < width; ++col) {
+    std::cout << std::setw(6) << secondRow[col] << " ";
+}
+std::cout << std::endl << std::endl;
+
 
     //CUDA 적용 X
 //     cv::Mat rawMat(height, width, CV_16UC1, raw);
@@ -885,7 +1022,8 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
 
     // GPU 메모리에 Bayer 데이터 업로드
     cv::cuda::GpuMat gpuRaw;
-    cv::Mat rawMat(height, width, CV_16UC1, raw); // CPU 메모리의 원본 데이터
+    //cv::Mat rawMat(height, width, CV_16UC1, raw); // CPU 메모리의 원본 데이터
+    cv::Mat rawMat(height, width, CV_16UC1, raw, width * sizeof(uint16_t));
     gpuRaw.upload(rawMat); // CPU → GPU로 데이터 업로드
 
 //     std::cout << "gpuRaw image size: " << gpuRaw.cols << "x" << gpuRaw.rows << std::endl;
@@ -898,21 +1036,24 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
     gpuRaw.convertTo(gpu8bitRaw, CV_8U, 255.0 / 65535.0, 0, stream);
     stream.waitForCompletion();
 
+    cv::Mat Raw8;
+    gpu8bitRaw.download(Raw8); // GPU → CPU
+    cv::imwrite("gpu8bitRaw.png", Raw8);
 //     std::cout << "gpu8bitRaw image size: " << gpu8bitRaw.cols << "x" << gpu8bitRaw.rows << std::endl;
 //     std::cout << "gpu8bitRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpu8bitRaw.depth() << std::endl;
 //     std::cout << "gpu8bitRaw number of channels(c1,c3): " << gpu8bitRaw.channels() << std::endl;
 
     // CUDA를 사용한 디모자이킹 (Debayering)
     cv::cuda::GpuMat gpuRGB;
-    cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::COLOR_BayerRG2BGR);
-    //cv::cuda::cvtColor(gpu8bitRaw, gpuRGB, cv::COLOR_BayerBG2BGR);
+    //cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::COLOR_BayerRG2BGR); //Demosaicing using bilinear interpolation
+    cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::cuda::COLOR_BayerRG2BGR_MHT); //Demosaicing using Malvar-He-Cutler algorithm
 
 //     std::cout << "gpuRGB image size: " << gpuRGB.cols << "x" << gpuRGB.rows << std::endl;
 //     std::cout << "gpuRGB type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRGB.depth() << std::endl;
 //     std::cout << "gpuRGB number of channels(c1,c3): " << gpuRGB.channels() << std::endl;
 
     // 화이트 밸런스 및 감마 보정 적용 (CUDA 커널 호출)
-    float gamma = 0.8f;
+    float gamma = 0.9f;
     //float rGain = 3.0f, gGain = 0.6f, bGain = 1.1f; // 임의 설정, 필요시 동적으로 조정 가능
     //applyWhiteBalanceAndGammaCUDA(gpuRGB, rGain, gGain, bGain, gamma);
     applyWhiteBalanceAndGammaCUDA(gpuRGB, gamma);
@@ -920,11 +1061,11 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
     // GPU에서 CPU로 다운로드 및 시각화
     cv::Mat finalImage;
     gpuRGB.download(finalImage); // GPU → CPU
-    cv::imshow("Processed Image", finalImage);
-    //cv::imwrite("WhiteBalanceAndGamma.png", finalImage);
+    //cv::imshow("Processed Image", finalImage);
+    cv::imwrite("WhiteBalanceAndGamma.png", finalImage);
 
     // Step 7: 키 입력으로 종료
-    if (cv::waitKey(1) == 'q') {
+    if (cv::waitKey(0) == 'q') {
         throw std::runtime_error("Quit");
     }
 }
@@ -963,6 +1104,7 @@ bool Camera::captureOpencv(Camera& camera) {
         throw std::runtime_error("Failed to dequeue buffer");
     }
 
+
 //     // raw 데이터 크기 출력
 //     std::cout<<"Size of v4l2_buffer bytesused : " << buf.bytesused << std::endl;
 //
@@ -979,6 +1121,7 @@ bool Camera::captureOpencv(Camera& camera) {
 //         std::cerr << "Error: " << e.what() << std::endl;
 //     }
 //
+
 
     // 3. CUDA 또는 일반 OpenCV 처리 함수 호출
     processRawImageCUDA(buffers[buf.index].start, WIDTH, HEIGHT);
