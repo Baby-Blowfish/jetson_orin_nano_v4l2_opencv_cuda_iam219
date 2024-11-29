@@ -40,9 +40,7 @@ set(SOURCES
 
 # CUDA 소스 파일 정의
 set(CUDA_SOURCES
-    ${CMAKE_SOURCE_DIR}/src/CUDAWhiteBalanceAndGamma.cu
-    ${CMAKE_SOURCE_DIR}/src/convert16bitTo8bit.cu # 추가
-    ${CMAKE_SOURCE_DIR}/src/CUDAGammaCorrection.cu
+    ${CMAKE_SOURCE_DIR}/src/CUDAimageprocessing.cu
 )
 
 # CUDA 파일 컴파일 추가

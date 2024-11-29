@@ -1,7 +1,6 @@
+#include "common.h"
 #include "Camera.h"
-#include "CUDAWhiteBalanceAndGamma.h"
-#include "convert16bitTo8bit.h"
-#include "CUDAGammaCorrection.h"
+#include "CUDAimageprocessing.h"
 
 
 

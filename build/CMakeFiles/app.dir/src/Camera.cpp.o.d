@@ -1,7 +1,6 @@
 CMakeFiles/app.dir/src/Camera.cpp.o: \
  /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/src/Camera.cpp \
  /usr/include/stdc-predef.h \
- /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/Camera.h \
  /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/common.h \
  /usr/include/c++/11/iostream \
  /usr/include/aarch64-linux-gnu/c++/11/bits/c++config.h \
@@ -423,9 +422,10 @@ CMakeFiles/app.dir/src/Camera.cpp.o: \
  /usr/local/include/opencv4/opencv2/cudafilters.hpp \
  /usr/local/include/opencv4/opencv2/cudacodec.hpp \
  /usr/local/include/opencv4/opencv2/cudawarping.hpp \
+ /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/Camera.h \
+ /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/common.h \
  /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/FrameBuffer.h \
- /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/CUDAWhiteBalanceAndGamma.h \
- /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/convert16bitTo8bit.h \
+ /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/CUDAimageprocessing.h \
  /usr/local/cuda-12.6/include/cuda_runtime.h \
  /usr/local/cuda-12.6/include/crt/host_config.h \
  /usr/local/cuda-12.6/include/builtin_types.h \
@@ -442,4 +442,4 @@ CMakeFiles/app.dir/src/Camera.cpp.o: \
  /usr/local/cuda-12.6/include/driver_functions.h \
  /usr/local/cuda-12.6/include/vector_functions.h \
  /usr/local/cuda-12.6/include/vector_functions.hpp \
- /mnt/ssd/projects/HighPass/test/test_orin_v4l2_fb/inc/CUDAGammaCorrection.h
+ /usr/local/cuda-12.6/include/cuda.h
