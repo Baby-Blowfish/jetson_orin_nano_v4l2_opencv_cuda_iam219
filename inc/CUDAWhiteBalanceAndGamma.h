@@ -11,5 +11,9 @@
  */
 void applyWhiteBalanceAndGammaCUDA(cv::cuda::GpuMat& gpuImage, float gamma);
 
+
+void cropAndReorganizeImageCUDA(const uint16_t* src, uint16_t* dst, int srcWidth, int dstWidth, int height);
+
+
 #endif // CUDA_WHITE_BALANCE_AND_GAMMA_H
 

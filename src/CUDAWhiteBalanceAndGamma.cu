@@ -2,6 +2,34 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 
+__global__ void cropAndReorganizeImageKernel(const uint16_t* src, uint16_t* dst, int srcWidth, int dstWidth, int height) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y; // 현재 행
+    int col = blockIdx.x * blockDim.x + threadIdx.x; // 현재 열
+
+    if (row >= height || col >= dstWidth) return;
+
+    if (row % 2 == 0) {
+        // 짝수 행: 3264개의 RG 픽셀만 복사
+        if (col < 3264) {
+            int srcIdx = row * srcWidth + col;
+            int dstIdx = row * dstWidth + col;
+            dst[dstIdx] = src[srcIdx];
+        }
+    } else {
+        // 홀수 행: 16개의 의미 있는 GB 픽셀 + 3248개의 GB 픽셀 복사
+        int srcIdx;
+        if (col < 16) {
+            srcIdx = row * srcWidth + 3264 + col; // 의미 있는 GB
+        } else if (col < 3264) {
+            srcIdx = row * srcWidth + (col - 16); // GB
+        } else {
+            return; // 범위를 벗어난 경우
+        }
+        int dstIdx = row * dstWidth + col;
+        dst[dstIdx] = src[srcIdx];
+    }
+}
+
 // 블록 내 모든 요소의 합을 계산하는 CUDA 커널
 __device__ float blockReduceSum(float val) {
     __shared__ float shared[1024];
@@ -80,6 +108,30 @@ __global__ void whiteBalanceAndGammaKernel(uchar3* image, int width, int height,
 
     image[idx] = pixel;
 }
+
+
+
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------//
+
+
+
+
+// CUDA 기반 크롭 및 재구성 함수
+void cropAndReorganizeImageCUDA(const uint16_t* src, uint16_t* dst, int srcWidth, int dstWidth, int height) {
+    dim3 block(256); // 스레드 블록 크기
+    dim3 grid((dstWidth + block.x - 1) / block.x, height); // 각 행을 처리하는 그리드 크기
+
+    // CUDA 커널 호출
+    cropAndReorganizeImageKernel<<<grid, block>>>(src, dst, srcWidth, dstWidth, height);
+    cudaDeviceSynchronize();
+}
+
+
 
 // CUDA 기반 화이트 밸런스 및 감마 보정 적용 함수
 void applyWhiteBalanceAndGammaCUDA(cv::cuda::GpuMat& gpuImage, float gamma) {

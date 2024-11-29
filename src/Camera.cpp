@@ -882,206 +882,58 @@ void Camera::processRawImageCUDA(void* data, int width, int height) {
       throw std::runtime_error("Raw data is null");
     }
 
-// #define WIDTH 3280
-// #define HEIGHT 2464
 
-// 0번째 행의 마지막 32픽셀 출력
-std::cout << "0 Row - 0~32 ----   last~32 Pixels:" << std::endl;
-const uint16_t* secondRow = raw; // 두 번째 행의 시작 주소
-for (int col = 0; col < 32; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = 1602; col < 1640; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"|||||||||||";
-for (int col = 1640; col < 1672; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = width - 32; col < width; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout << std::endl<< std::endl;
+    // 입력 데이터 크기 (3280x2464)
+    int srcWidth = width;
+    int srcHeight = height;
 
+    // 출력 데이터 크기 (3264x2464)
+    int dstWidth = 3264;
+    int dstHeight = srcHeight;
 
-// 1번째 행의 마지막 32픽셀 출력
-std::cout << "1 Row - 0~32 ----   last~32 Pixels:" << std::endl;
-secondRow = raw + width; // 두 번째 행의 시작 주소
-for (int col = 0; col < 32; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = 1602; col < 1640; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"|||||||||||";
-for (int col = 1640; col < 1672; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = width - 32; col < width; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout << std::endl<< std::endl;
+    // GPU 메모리 할당
+    uint16_t *d_src, *d_dst;
+    size_t srcSize = srcWidth * srcHeight * sizeof(uint16_t);
+    size_t dstSize = dstWidth * dstHeight * sizeof(uint16_t);
+    cudaMalloc(&d_src, srcSize);
+    cudaMalloc(&d_dst, dstSize);
 
-// 2번째 행의 마지막 32픽셀 출력
-std::cout << "2 Row - 0~32 ----   last~32 Pixels:" << std::endl;
-secondRow = raw + width*2; // 두 번째 행의 시작 주소
-for (int col = 0; col < 32; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = 1602; col < 1640; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"|||||||||||";
-for (int col = 1640; col < 1672; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = width - 32; col < width; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout << std::endl << std::endl;
+    // 원본 데이터를 GPU 메모리로 복사
+    cudaMemcpy(d_src, raw, srcSize, cudaMemcpyHostToDevice);
 
-// 2번째 행의 마지막 32픽셀 출력
-std::cout << "3 Row - 0~32 ----   last~32 Pixels:" << std::endl;
-secondRow = raw + width*3; // 두 번째 행의 시작 주소
-for (int col = 0; col < 32; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = 1602; col < 1640; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"|||||||||||";
-for (int col = 1640; col < 1672; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = width - 32; col < width; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout << std::endl << std::endl;
+    // 크롭 및 재구성 작업 수행
+    cropAndReorganizeImageCUDA(d_src, d_dst, srcWidth, dstWidth, dstHeight);
 
-// 2번째 행의 마지막 32픽셀 출력
-std::cout << "2463 Row - 0~32 ----   last~32 Pixels:" << std::endl;
-secondRow = raw + width*2463; // 두 번째 행의 시작 주소
-for (int col = 0; col < 32; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = width - 32; col < width; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout << std::endl << std::endl;
+    // 결과 데이터를 GpuMat로 래핑
+    cv::cuda::GpuMat gpuCroppedRaw(dstHeight, dstWidth, CV_16UC1, d_dst);
+
+    cv::Mat raw16;
+    gpuCroppedRaw.download(raw16); // gpu → cpu
+    cv::imwrite("raw16.png", raw16);
+    std::cout << "raw16 image size: " << gpuCroppedRaw.cols << "x" << gpuCroppedRaw.rows << std::endl;
+    std::cout << "raw16 type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuCroppedRaw.depth() << std::endl;
+    std::cout << "raw16 number of channels(c1,c3): " << gpuCroppedRaw.channels() << std::endl;
 
 
-// 2번째 행의 마지막 32픽셀 출력
-std::cout << "2464 Row - 0~32 ----   last~32 Pixels:" << std::endl;
-secondRow = raw + width*2464; // 두 번째 행의 시작 주소
-for (int col = 0; col < 32; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = width - 32; col < width; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout << std::endl << std::endl;
-
-// 2번째 행의 마지막 32픽셀 출력
-std::cout << "2465 Row - 0~32 ----   last~32 Pixels:" << std::endl;
-secondRow = raw + width*2465; // 두 번째 행의 시작 주소
-for (int col = 0; col < 32; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout <<"-------";
-for (int col = width - 32; col < width; ++col) {
-    std::cout << std::setw(6) << secondRow[col] << " ";
-}
-std::cout << std::endl << std::endl;
-
-
-    //CUDA 적용 X
-//     cv::Mat rawMat(height, width, CV_16UC1, raw);
-//
-//     // CV_16UC1 --> CV_8UC1
-//     cv::Mat scaledMat1;
-//     rawMat.convertTo(scaledMat1, CV_8U, 255.0 / 65535.0);
-//
-//
-//     cv::Mat colorMat1;
-//     cv::cvtColor(scaledMat1, colorMat1, cv::COLOR_BayerBG2BGR);
-//     //cv::imwrite("Demosaicing.png", colorMat1);
-//
-//     // 화이트 밸런스 적용
-//     applyWhiteBalance(colorMat1);
-//     //cv::imwrite("whitebalance.png", colorMat1);
-//
-//     // 감마 보정 적용
-//     applyGammaCorrection(colorMat1, 0.7);
-//     //cv::imwrite("gama.png", colorMat1);
-//     cv::imshow("image", colorMat1);
-//
-
-    // 디버깅용 출력
-//     cv::imshow("Raw Bayer Image Gray (Full Range)", scaledMat1);
-//     cv::imshow("Raw Bayer Image Gray (Lower 10-bits)", scaledMat2);
-//     cv::imshow("RGGB 8-bit Mat", rggbMat);
-//     cv::imshow("Raw Bayer Image (Full Range) Demosaicing", colorMat1);
-//     cv::imshow("Raw Bayer Image (Lower 10-bits) Demosaicing", colorMat2);
-//     cv::imshow("RGGB 8-bit Demosaicing", colorMat3);
-//
-//     cv::imwrite("gray full.png",scaledMat1);
-//     cv::imwrite("gray lower.png",scaledMat2);
-//     cv::imwrite("full.png",colorMat1);
-//     cv::imwrite("lower.png",colorMat2);
-//     if (cv::waitKey(0) == 'q') {
-//         throw std::runtime_error("Quit");
-//     }
-
-
-
-
-    // CUDA 적용
-
-    // CUDA 기반 화이트 밸런스 적용
-    //calculate_and_apply_white_balance(raw, width, height);
-
-
-    // GPU 메모리에 Bayer 데이터 업로드
-    cv::cuda::GpuMat gpuRaw;
-    //cv::Mat rawMat(height, width, CV_16UC1, raw); // CPU 메모리의 원본 데이터
-    cv::Mat rawMat(height, width, CV_16UC1, raw, width * sizeof(uint16_t));
-    gpuRaw.upload(rawMat); // CPU → GPU로 데이터 업로드
-
-//     std::cout << "gpuRaw image size: " << gpuRaw.cols << "x" << gpuRaw.rows << std::endl;
-//     std::cout << "gpuRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRaw.depth() << std::endl;
-//     std::cout << "gpuRaw number of channels(c1,c3): " << gpuRaw.channels() << std::endl;
-
-    // 16비트 -> 8비트 변환
-    cv::cuda::Stream stream;
+    // 16비트 데이터를 8비트로 변환
     cv::cuda::GpuMat gpu8bitRaw;
-    gpuRaw.convertTo(gpu8bitRaw, CV_8U, 255.0 / 65535.0, 0, stream);
-    stream.waitForCompletion();
+    gpuCroppedRaw.convertTo(gpu8bitRaw, CV_8U, 255.0 / 65535.0);
 
-    cv::Mat Raw8;
-    gpu8bitRaw.download(Raw8); // GPU → CPU
-    cv::imwrite("gpu8bitRaw.png", Raw8);
-//     std::cout << "gpu8bitRaw image size: " << gpu8bitRaw.cols << "x" << gpu8bitRaw.rows << std::endl;
-//     std::cout << "gpu8bitRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpu8bitRaw.depth() << std::endl;
-//     std::cout << "gpu8bitRaw number of channels(c1,c3): " << gpu8bitRaw.channels() << std::endl;
+    cv::Mat raw8;
+    gpu8bitRaw.download(raw8); // gpu → cpu
+    cv::imwrite("gpu8bitRaw.png", raw8);
+    std::cout << "gpu8bitRaw image size: " << gpu8bitRaw.cols << "x" << gpu8bitRaw.rows << std::endl;
+    std::cout << "gpu8bitRaw type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpu8bitRaw.depth() << std::endl;
+    std::cout << "gpu8bitRaw number of channels(c1,c3): " << gpu8bitRaw.channels() << std::endl;
 
     // CUDA를 사용한 디모자이킹 (Debayering)
     cv::cuda::GpuMat gpuRGB;
     //cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::COLOR_BayerRG2BGR); //Demosaicing using bilinear interpolation
     cv::cuda::demosaicing(gpu8bitRaw, gpuRGB, cv::cuda::COLOR_BayerRG2BGR_MHT); //Demosaicing using Malvar-He-Cutler algorithm
 
-//     std::cout << "gpuRGB image size: " << gpuRGB.cols << "x" << gpuRGB.rows << std::endl;
-//     std::cout << "gpuRGB type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRGB.depth() << std::endl;
-//     std::cout << "gpuRGB number of channels(c1,c3): " << gpuRGB.channels() << std::endl;
+    std::cout << "gpuRGB image size: " << gpuRGB.cols << "x" << gpuRGB.rows << std::endl;
+    std::cout << "gpuRGB type 0(cv_8u), 1(cv_8s), 2(cv_16u): " << gpuRGB.depth() << std::endl;
+    std::cout << "gpuRGB number of channels(c1,c3): " << gpuRGB.channels() << std::endl;
 
     // 화이트 밸런스 및 감마 보정 적용 (CUDA 커널 호출)
     float gamma = 0.9f;
@@ -1099,6 +951,10 @@ std::cout << std::endl << std::endl;
     if (cv::waitKey(0) == 'q') {
         throw std::runtime_error("Quit");
     }
+
+    cudaFree(d_src);
+    cudaFree(d_dst);
+
 }
 
 //-------------------------------------Using-OpenCV-CUDA-output-end-------------------------------------//
